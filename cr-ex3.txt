@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Crypto Tool</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background: linear-gradient(to right, #6a85b6, #bac8e0);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 420px;
+            margin: auto;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background: #4a6fa5;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #3b5c8a;
+        }
+
+        #outputDH, #outputRSA {
+            margin-top: 15px;
+            background: #f4f6f8;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Choose Algorithm</h2>
+<button onclick="showDH()">Diffie-Hellman</button>
+<button onclick="showRSA()">RSA</button>
+
+<!-- Diffie-Hellman -->
+<div id="dh" class="hidden">
+    <div class="box">
+        <h2>Diffie-Hellman</h2>
+
+        <input id="p" placeholder="Enter Prime (p)">
+        <input id="g" placeholder="Enter Primitive Root (g)">
+        <input id="a" placeholder="Private Key of A">
+        <input id="b" placeholder="Private Key of B">
+
+        <button onclick="calculateDH()">Generate Keys</button>
+
+        <div id="outputDH"></div>
+    </div>
+</div>
+
+<!-- RSA -->
+<div id="rsa" class="hidden">
+    <div class="box">
+        <h2>RSA Encryption</h2>
+
+        <input id="rp" placeholder="Prime p">
+        <input id="rq" placeholder="Prime q">
+        <input id="re" placeholder="Public exponent (e)">
+        <input id="msg" placeholder="Message (number)">
+
+        <button onclick="calculateRSA()">Compute</button>
+
+        <div id="outputRSA"></div>
+    </div>
+</div>
+
+<script>
+
+// UI SWITCH
+function showDH(){
+    document.getElementById("dh").classList.remove("hidden");
+    document.getElementById("rsa").classList.add("hidden");
+}
+
+function showRSA(){
+    document.getElementById("rsa").classList.remove("hidden");
+    document.getElementById("dh").classList.add("hidden");
+}
+
+// COMMON FUNCTION
+function modExp(base, exp, mod){
+    let result = 1;
+    base = base % mod;
+
+    while(exp > 0){
+        if(exp % 2 === 1){
+            result = (result * base) % mod;
+        }
+        base = (base * base) % mod;
+        exp = Math.floor(exp / 2);
+    }
+    return result;
+}
+
+// ================= Diffie-Hellman =================
+function calculateDH(){
+
+    let p = parseInt(document.getElementById("p").value);
+    let g = parseInt(document.getElementById("g").value);
+    let a = parseInt(document.getElementById("a").value);
+    let b = parseInt(document.getElementById("b").value);
+    let out = document.getElementById("outputDH");
+
+    if(isNaN(p) || isNaN(g) || isNaN(a) || isNaN(b)){
+        out.innerHTML = "Enter valid numbers";
+        return;
+    }
+
+    let A = modExp(g, a, p);
+    let B = modExp(g, b, p);
+
+    let keyA = modExp(B, a, p);
+    let keyB = modExp(A, b, p);
+
+    out.innerHTML = `
+    <b>Step 1: Public Keys</b><br>
+    A = ${A}<br>
+    B = ${B}<br><br>
+
+    <b>Step 2: Shared Secret</b><br>
+    Key (A) = ${keyA}<br>
+    Key (B) = ${keyB}<br><br>
+
+    <b>Final Shared Key = ${keyA}</b>
+    `;
+}
+
+// ================= RSA =================
+function gcd(a,b){
+    return b==0 ? a : gcd(b, a%b);
+}
+
+function modInverse(e, phi){
+    for(let d=1; d<phi; d++){
+        if((e*d) % phi === 1){
+            return d;
+        }
+    }
+    return null;
+}
+
+function calculateRSA(){
+
+    let p = parseInt(document.getElementById("rp").value);
+    let q = parseInt(document.getElementById("rq").value);
+    let e = parseInt(document.getElementById("re").value);
+    let m = parseInt(document.getElementById("msg").value);
+
+    let out = document.getElementById("outputRSA");
+
+    if(isNaN(p) || isNaN(q) || isNaN(e) || isNaN(m)){
+        out.innerHTML = " Enter valid numbers";
+        return;
+    }
+
+    let n = p * q;
+    let phi = (p-1)*(q-1);
+
+    if(gcd(e, phi) !== 1){
+        out.innerHTML = " e must be coprime with φ(n)";
+        return;
+    }
+
+    let d = modInverse(e, phi);
+
+    let cipher = modExp(m, e, n);
+    let decrypted = modExp(cipher, d, n);
+
+    out.innerHTML = `
+    <div class="label">Step 1: Key Generation</div><br>
+    n = ${n}<br>
+    φ(n) = ${phi}<br>
+    Public Key = (${e}, ${n})<br>
+    Private Key = (${d}, ${n})<br><br>
+
+    <div class="label">Step 2: Encryption</div><br>
+    C = ${cipher}<br><br>
+
+    <div class="label">Step 3: Decryption</div><br>
+    M = ${decrypted}<br><br>
+
+    <div class="label">Final Decrypted Message: ${decrypted}</div>
+    `;
+}
+
+</script>
+
+</body>
+</html>

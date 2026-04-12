@@ -1,0 +1,284 @@
+[23bcs073@mepcolinux cryptography_algorithm]$cd ex1
+[23bcs073@mepcolinux ex1]$ls
+ex1.prn  ex1.txt
+[23bcs073@mepcolinux ex1]$cat ex1.prn
+Script started on Sat Feb 21 15:45:34 2026
+[23bcs073@mepcolinux ex1]$cat ex1.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto & Number Theory Toolkit 2026</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #333;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px; }
+        .container { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 650px; }
+
+        .tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 15px; border: none; background: #e0e0e0; cursor: pointer; border-radius: 5px; transition: 0.3s; font-weight: bold; }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; color: #555; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button.action-btn { flex: 1; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 1rem; color: white; font-weight: bold; transition: 0.2s; }
+        .enc-btn { background: var(--success); }
+        .enc-btn:hover { background: #218838; }
+        .dec-btn { background: var(--danger); }
+        .dec-btn:hover { background: #c82333; }
+        .math-btn { background: var(--primary); width: 100%; }
+
+        .result-box { margin-top: 25px; padding: 15px; background: #f0f8ff; border-left: 5px solid var(--primary); border-radius: 4px; word-break: break-all; min-height: 50px; }
+        .error { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center; margin-top: 0;">Interactive Crypto Toolkit</h2>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('shift')">Shift</button>
+        <button class="tab-btn" onclick="showTab('hill')">Hill (2x2)</button>
+        <button class="tab-btn" onclick="showTab('playfair')">Playfair</button>
+        <button class="tab-btn" onclick="showTab('miller')">Miller-Rabin</button>
+        <button class="tab-btn" onclick="showTab('euclidean')">Euclidean</button>
+    </div>
+
+    <!-- 1. Shift Cipher -->
+    <div id="shift" class="section active">
+        <h3>Shift (Caesar) Cipher</h3>
+        <label>Message / Ciphertext:</label>
+        <input type="text" id="shiftText" placeholder="Enter text here...">
+        <label>Shift Value (Key):</label>
+        <input type="number" id="shiftKey" value="3">
+        <div class="btn-group">
+            <button class="action-btn enc-btn" onclick="runShift(true)">Encrypt</button>
+            <button class="action-btn dec-btn" onclick="runShift(false)">Decrypt</button>
+        </div>
+    </div>
+
+    <!-- 2. Hill Cipher -->
+    <div id="hill" class="section">
+        <h3>Hill Cipher (2x2 Matrix)</h3>
+        <label>Text (Pairs only, e.g., 'HELP'):</label>
+        <input type="text" id="hillText" placeholder="Input text...">
+        <label>Key (4 Letters for 2x2 Matrix, e.g., 'GYBN'):</label>
+        <input type="text" id="hillKey" maxlength="4" placeholder="4-letter key">
+        <div class="btn-group">
+            <button class="action-btn enc-btn" onclick="runHill(true)">Encrypt</button>
+            <button class="action-btn dec-btn" onclick="runHill(false)">Decrypt</button>
+        </div>
+    </div>
+
+    <!-- 3. Playfair Cipher -->
+    <div id="playfair" class="section">
+        <h3>Playfair Cipher</h3>
+        <label>Text:</label>
+        <input type="text" id="playfairText" placeholder="Message...">
+        <label>Keyword:</label>
+        <input type="text" id="playfairKey" placeholder="e.g. KEYWORD">
+        <div class="btn-group">
+            <button class="action-btn enc-btn" onclick="runPlayfair(true)">Encrypt</button>
+            <button class="action-btn dec-btn" onclick="runPlayfair(false)">Decrypt</button>
+        </div>
+    </div>
+
+    <!-- 4. Miller-Rabin -->
+    <div id="miller" class="section">
+        <h3>Miller-Rabin Primality Test</h3>
+        <label>Number to Test:</label>
+        <input type="number" id="millerNum" placeholder="e.g. 104729">
+        <label>Accuracy (k iterations):</label>
+        <input type="number" id="millerK" value="5">
+        <button class="action-btn math-btn" onclick="runMiller()">Check Primality</button>
+    </div>
+
+    <!-- 5. Euclidean Algorithm -->
+    <div id="euclidean" class="section">
+        <h3>Euclidean Algorithm (GCD)</h3>
+        <label>Number A:</label>
+        <input type="number" id="eucA" placeholder="First number">
+        <label>Number B:</label>
+        <input type="number" id="eucB" placeholder="Second number">
+        <button class="action-btn math-btn" onclick="runEuclidean()">Find GCD</button>
+    </div>
+
+    <div class="result-box" id="resultDisplay">
+        <strong>Result:</strong> <span id="resultText">Waiting for input...</span>
+    </div>
+</div>
+
+<script>
+    // UI Logic
+    function showTab(tabId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function display(msg, isError = false) {
+        const el = document.getElementById('resultText');
+        el.innerHTML = msg;
+        el.className = isError ? 'error' : '';
+    }
+
+
+    const mod = (n, m) => ((n % m) + m) % m;
+
+    //  1. Shift Cipher
+    function runShift(encrypt) {
+        let text = document.getElementById('shiftText').value;
+        let k = parseInt(document.getElementById('shiftKey').value);
+        if (!encrypt) k = -k;
+
+        let res = text.replace(/[a-z]/gi, (char) => {
+            let base = (char <= 'Z') ? 65 : 97;
+            return String.fromCharCode(mod(char.charCodeAt(0) - base + k, 26) + base);
+        });
+        display(res);
+    }
+
+    // 2. Hill Cipher (2x2)
+    function getModInverse(a, m) {
+        a = mod(a, m);
+        for (let x = 1; x < m; x++) {
+            if ((a * x) % m === 1) return x;
+        }
+        return null;
+    }
+
+    function runHill(encrypt) {
+        let text = document.getElementById('hillText').value.toUpperCase().replace(/[^A-Z]/g, '');
+        let keyStr = document.getElementById('hillKey').value.toUpperCase().replace(/[^A-Z]/g, '');
+
+        if (keyStr.length !== 4) return display("Error: Key must be 4 characters.", true);
+        if (text.length % 2 !== 0) text += 'X';
+
+        let k = keyStr.split('').map(c => c.charCodeAt(0) - 65);
+        let a = k[0], b = k[1], c = k[2], d = k[3];
+        let matrix;
+
+        if (encrypt) {
+            matrix = [a, b, c, d];
+        } else {
+            let det = mod(a * d - b * c, 26);
+            let invDet = getModInverse(det, 26);
+            if (invDet === null) return display(`Error: Key is not invertible (Det: ${det}). Try another key.`, true);
+            matrix = [mod(d * invDet, 26), mod(-b * invDet, 26), mod(-c * invDet, 26), mod(a * invDet, 26)];
+        }
+
+        let res = "";
+        for (let i = 0; i < text.length; i += 2) {
+            let p1 = text.charCodeAt(i) - 65;
+            let p2 = text.charCodeAt(i + 1) - 65;
+            res += String.fromCharCode(mod(matrix[0] * p1 + matrix[1] * p2, 26) + 65);
+            res += String.fromCharCode(mod(matrix[2] * p1 + matrix[3] * p2, 26) + 65);
+        }
+        display(res);
+    }
+
+    // 3. Playfair Cipher
+    function runPlayfair(encrypt) {
+        let text = document.getElementById('playfairText').value.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
+        let key = document.getElementById('playfairKey').value.toUpperCase().replace(/J/g, 'I').replace(/[^A-Z]/g, '');
+
+        let alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+        let gridChars = [...new Set((key + alphabet).split(''))];
+        let matrix = [], pos = {};
+
+        gridChars.forEach((char, i) => {
+            let r = Math.floor(i / 5), c = i % 5;
+            if (!matrix[r]) matrix[r] = [];
+            matrix[r][c] = char;
+            pos[char] = [r, c];
+        });
+
+        let pairs = [];
+        for (let i = 0; i < text.length; i += 2) {
+            let a = text[i], b = text[i+1] || 'X';
+            if (a === b && encrypt) { b = 'X'; i--; }
+            pairs.push([a, b]);
+        }
+
+        let shift = encrypt ? 1 : -1;
+        let res = pairs.map(p => {
+            let [r1, c1] = pos[p[0]], [r2, c2] = pos[p[1]];
+            if (r1 === r2) return matrix[r1][mod(c1 + shift, 5)] + matrix[r2][mod(c2 + shift, 5)];
+            if (c1 === c2) return matrix[mod(r1 + shift, 5)][c1] + matrix[mod(r2 + shift, 5)][c2];
+            return matrix[r1][c2] + matrix[r2][c1];
+        }).join('');
+        display(res);
+    }
+
+    //  4. Miller-Rabin Primality
+    function bigPower(base, exp, mod) {
+        let res = 1n; base = BigInt(base) % BigInt(mod);
+        while (exp > 0n) {
+            if (exp % 2n === 1n) res = (res * base) % BigInt(mod);
+            base = (base * base) % BigInt(mod); exp = exp / 2n;
+        }
+        return res;
+    }
+
+    function runMiller() {
+        let n = BigInt(document.getElementById('millerNum').value || 0);
+        let k = parseInt(document.getElementById('millerK').value || 5);
+
+        if (n < 2n) return display("Not Prime", true);
+        if (n === 2n || n === 3n) return display("Prime");
+        if (n % 2n === 0n) return display("Composite (Even number)");
+
+        let d = n - 1n, s = 0n;
+        while (d % 2n === 0n) { d /= 2n; s++; }
+
+        for (let i = 0; i < k; i++) {
+            let a = 2n + BigInt(Math.floor(Math.random() * Number(n - 4n)));
+            let x = bigPower(a, d, n);
+            if (x === 1n || x === n - 1n) continue;
+            let composite = true;
+            for (let r = 1n; r < s; r++) {
+                x = (x * x) % n;
+                if (x === n - 1n) { composite = false; break; }
+            }
+            if (composite) return display("Result: Composite");
+        }
+        display("Result: Probably Prime");
+    }
+
+    // 5. Euclidean Algorithm
+    function runEuclidean() {
+        let a = Math.abs(parseInt(document.getElementById('eucA').value || 0));
+        let b = Math.abs(parseInt(document.getElementById('eucB').value || 0));
+        let steps = [];
+        let originalA = a, originalB = b;
+
+        while (b) {
+            steps.push(`${a} = (${Math.floor(a/b)} &times; ${b}) + ${a % b}`);
+            let t = b; b = a % b; a = t;
+        }
+        display(`GCD(${originalA}, ${originalB}) = <strong>${a}</strong><br><br><small>${steps.join('<br>')}</small>`);
+    }
+</script>
+
+</body>
+</html>
+[23bcs073@mepcolinux ex1]$exit
+exit
+
+Script done on Sat Feb 21 15:45:43 2026
+[23bcs073@mepcolinux ex1]$
