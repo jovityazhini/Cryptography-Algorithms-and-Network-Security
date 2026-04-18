@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Toolkit</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0d1117;
+    color:white;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
+.tabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+}
+
+.tab{
+    padding:10px 15px;
+    background:#161b22;
+    cursor:pointer;
+    border-radius:8px;
+}
+
+.tab.active{
+    background:#238636;
+}
+
+.section{
+    display:none;
+    background:#161b22;
+    padding:20px;
+    border-radius:10px;
+}
+
+.section.active{
+    display:block;
+}
+
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:6px;
+    border:none;
+    background:#0d1117;
+    color:white;
+}
+
+button{
+    width:100%;
+    padding:10px;
+    background:#238636;
+    border:none;
+    color:white;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+.output{
+    margin-top:10px;
+    padding:10px;
+    background:black;
+    word-break:break-all;
+}
+
+.ok{color:lightgreen;}
+.bad{color:red;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="tabs">
+    <div class="tab active" onclick="showTab(0)">SHA-256</div>
+    <div class="tab" onclick="showTab(1)">CMAC</div>
+    <div class="tab" onclick="showTab(2)">HMAC</div>
+</div>
+
+<!-- SHA -->
+<div class="section active">
+    <h3>SHA-256</h3>
+    <textarea id="msg" placeholder="Message"></textarea>
+    <button onclick="generateHash()">Generate</button>
+    <div class="output" id="hashOutput"></div>
+
+    <textarea id="verifyMsg" placeholder="Verify Message"></textarea>
+    <button onclick="verifyHash()">Verify</button>
+    <div class="output" id="verifyOutput"></div>
+</div>
+
+<!-- CMAC -->
+<div class="section">
+    <h3>CMAC</h3>
+    <input id="key" placeholder="Key">
+    <textarea id="message" placeholder="Message"></textarea>
+    <button onclick="generateCMAC()">Generate</button>
+    <div class="output" id="tagOutput"></div>
+
+    <textarea id="verifyMsg2" placeholder="Verify Message"></textarea>
+    <button onclick="verifyCMAC()">Verify</button>
+    <div class="output" id="verifyOutput2"></div>
+</div>
+
+<!-- HMAC -->
+<div class="section">
+    <h3>HMAC</h3>
+    <input id="key2" placeholder="Key">
+    <textarea id="msg2" placeholder="Message"></textarea>
+    <button onclick="generateHMAC()">Generate</button>
+    <div class="output" id="outHash"></div>
+
+    <textarea id="verifyMsg3" placeholder="Verify Message"></textarea>
+    <button onclick="verifyHMAC()">Verify</button>
+    <div class="output" id="outVerify"></div>
+</div>
+
+</div>
+
+<script>
+// TAB SWITCH
+function showTab(i){
+    document.querySelectorAll('.tab').forEach((t,idx)=>{
+        t.classList.toggle('active',idx===i);
+    });
+    document.querySelectorAll('.section').forEach((s,idx)=>{
+        s.classList.toggle('active',idx===i);
+    });
+}
+
+// ===== SHA-256 (UNCHANGED) =====
+const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+
+function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }
+
+function sha256(ascii){
+let H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+let msg=[];
+for(let i=0;i<ascii.length;i++) msg.push(ascii.charCodeAt(i));
+let l=msg.length*8;
+msg.push(0x80);
+while((msg.length*8)%512!==448) msg.push(0);
+for(let i=7;i>=0;i--) msg.push((l>>> (i*8)) & 255);
+
+for(let i=0;i<msg.length;i+=64){
+let w=new Array(64);
+for(let t=0;t<16;t++){
+w[t]=(msg[i+4*t]<<24)|(msg[i+4*t+1]<<16)|(msg[i+4*t+2]<<8)|(msg[i+4*t+3]);
+}
+for(let t=16;t<64;t++){
+let s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);
+let s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);
+w[t]=(w[t-16]+s0+w[t-7]+s1)>>>0;
+}
+let[a,b,c,d,e,f,g,h]=H;
+for(let t=0;t<64;t++){
+let S1=rotr(e,6)^rotr(e,11)^rotr(e,25);
+let ch=(e&f)^(~e&g);
+let temp1=(h+S1+ch+K[t]+w[t])>>>0;
+let S0=rotr(a,2)^rotr(a,13)^rotr(a,22);
+let maj=(a&b)^(a&c)^(b&c);
+let temp2=(S0+maj)>>>0;
+h=g;g=f;f=e;
+e=(d+temp1)>>>0;
+d=c;c=b;b=a;
+a=(temp1+temp2)>>>0;
+}
+H=[(H[0]+a)>>>0,(H[1]+b)>>>0,(H[2]+c)>>>0,(H[3]+d)>>>0,
+(H[4]+e)>>>0,(H[5]+f)>>>0,(H[6]+g)>>>0,(H[7]+h)>>>0];
+}
+return H.map(h=>('00000000'+h.toString(16)).slice(-8)).join('');
+}
+
+let originalHash="";
+function generateHash(){
+let msg=document.getElementById("msg").value;
+originalHash=sha256(msg);
+document.getElementById("hashOutput").innerHTML=originalHash;
+}
+function verifyHash(){
+let msg=document.getElementById("verifyMsg").value;
+let newHash=sha256(msg);
+document.getElementById("verifyOutput").innerHTML =
+newHash===originalHash?"<span class='ok'>✔</span>"+newHash:"<span class='bad'>✖</span>"+newHash;
+}
+
+// ===== CMAC (UNCHANGED) =====
+function stringToBits(str){let bits=[];for(let i=0;i<str.length;i++){let code=str.charCodeAt(i);for(let b=7;b>=0;b--){bits.push((code>>b)&1);}}return bits;}
+function xorBits(a,b){return a.map((v,i)=>v^b[i]);}
+function leftShift(bits){let shifted=bits.slice(1);shifted.push(0);return shifted;}
+function padBlock(block){block.push(1);while(block.length<128) block.push(0);return block;}
+function toyCipher(block,key){return xorBits(block,key);}
+function generateSubkeys(keyBits){
+let L=toyCipher(keyBits,keyBits);
+let Rb=new Array(120).fill(0).concat([1,0,0,0,0,1,1,1]);
+let K1=leftShift(L);
+if(L[0]===1) K1=xorBits(K1,Rb);
+let K2=leftShift(K1);
+if(K1[0]===1) K2=xorBits(K2,Rb);
+return[K1,K2];
+}
+function cmac(message,key){
+let keyBits=stringToBits(key).slice(0,128);
+while(keyBits.length<128) keyBits.push(0);
+let msgBits=stringToBits(message);
+let blocks=[];
+for(let i=0;i<msgBits.length;i+=128){blocks.push(msgBits.slice(i,i+128));}
+let[K1,K2]=generateSubkeys(keyBits);
+if(blocks[blocks.length-1].length===128){
+blocks[blocks.length-1]=xorBits(blocks[blocks.length-1],K1);
+}else{
+blocks[blocks.length-1]=padBlock(blocks[blocks.length-1]);
+blocks[blocks.length-1]=xorBits(blocks[blocks.length-1],K2);
+}
+let prev=new Array(128).fill(0);
+for(let block of blocks){
+let temp=xorBits(prev,block);
+prev=toyCipher(temp,keyBits);
+}
+return prev.join('');
+}
+
+let originalTag="";
+function generateCMAC(){
+let key=document.getElementById("key").value;
+let msg=document.getElementById("message").value;
+originalTag=cmac(msg,key);
+document.getElementById("tagOutput").innerHTML=originalTag;
+}
+function verifyCMAC(){
+let key=document.getElementById("key").value;
+let msg=document.getElementById("verifyMsg2").value;
+let newTag=cmac(msg,key);
+document.getElementById("verifyOutput2").innerHTML =
+newTag===originalTag?"<span class='ok'>✔</span>"+newTag:"<span class='bad'>✖</span>"+newTag;
+}
+
+// ===== HMAC (UNCHANGED) =====
+async function hmacSHA256(key,message){
+const enc=new TextEncoder();
+const cryptoKey=await crypto.subtle.importKey("raw",enc.encode(key),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+const signature=await crypto.subtle.sign("HMAC",cryptoKey,enc.encode(message));
+return Array.from(new Uint8Array(signature)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+let originalTag2="";
+async function generateHMAC(){
+const key=document.getElementById("key2").value;
+const msg=document.getElementById("msg2").value;
+originalTag2=await hmacSHA256(key,msg);
+document.getElementById("outHash").innerHTML=originalTag2;
+}
+async function verifyHMAC(){
+const key=document.getElementById("key2").value;
+const msg=document.getElementById("verifyMsg3").value;
+const newTag=await hmacSHA256(key,msg);
+document.getElementById("outVerify").innerHTML =
+newTag===originalTag2?"<span class='ok'>✔</span>"+newTag:"<span class='bad'>✖</span>"+newTag;
+}
+</script>
+
+</body>
+</html>
